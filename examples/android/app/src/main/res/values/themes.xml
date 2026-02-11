@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Tunnels2Bots" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#7c3aed</item>
+        <item name="colorPrimaryVariant">#00d4ff</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#00d4ff</item>
+        <item name="colorSecondaryVariant">#7c3aed</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">#1a1a2e</item>
+        <item name="android:windowBackground">#1a1a2e</item>
+    </style>
+</resources>

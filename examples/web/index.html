@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Tunnels-to-Bots</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+      min-height: 100vh;
+      color: #fff;
+      overflow-x: hidden;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 12px;
+      padding-bottom: 80px;
+    }
+    h1 {
+      text-align: center;
+      padding: 16px 0;
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, #00d4ff, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .card h2 {
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      color: #00d4ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group { margin-bottom: 12px; }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+      color: #888;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 16px; /* Prevent zoom on iOS */
+      transition: border-color 0.3s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #00d4ff;
+    }
+    button {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00d4ff, #7c3aed);
+      color: #fff;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    
+    /* Status indicator */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .status.connected .status-dot { background: #00ff88; }
+    .status.disconnected .status-dot { background: #ff4444; }
+    .status.connecting .status-dot { background: #ffaa00; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Bots grid */
+    .bots-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bots-scroll::-webkit-scrollbar { display: none; }
+    .bot-card {
+      flex: 0 0 140px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .bot-card:active { transform: scale(0.97); }
+    .bot-card.selected {
+      border-color: #00d4ff;
+      background: rgba(0,212,255,0.1);
+    }
+    .bot-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .status-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 10px;
+      display: inline-block;
+      margin-top: 6px;
+    }
+    .status-badge.online { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .status-badge.offline { background: rgba(255,68,68,0.2); color: #ff4444; }
+    
+    /* Chat section */
+    .chat-section {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26,26,46,0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .messages {
+      height: 300px;
+      overflow-y: auto;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .message {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.sent {
+      background: linear-gradient(135deg, #7c3aed, #00d4ff);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .message.received {
+      background: rgba(255,255,255,0.1);
+      border-bottom-left-radius: 4px;
+    }
+    .message.system {
+      background: rgba(255,193,7,0.2);
+      color: #ffc107;
+      font-size: 0.85rem;
+      text-align: center;
+      max-width: 100%;
+    }
+    .message .meta {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .input-row input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 24px;
+    }
+    .input-row button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    
+    /* Quick actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .quick-btn {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 20px;
+      color: #aaa;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .quick-btn:active { background: rgba(255,255,255,0.2); color: #fff; }
+    
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      color: #888;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(0,212,255,0.3));
+      color: #fff;
+    }
+    .tab:active { transform: scale(0.98); }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Tasks */
+    .task-item {
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .task-title { font-weight: 600; font-size: 0.95rem; }
+    .priority {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+    .priority.low { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .priority.medium { background: rgba(255,170,0,0.2); color: #ffaa00; }
+    .priority.high { background: rgba(255,68,0,0.2); color: #ff4400; }
+    .priority.urgent { background: rgba(255,0,0,0.2); color: #ff0000; }
+    .task-desc {
+      font-size: 0.85rem;
+      color: #888;
+    }
+    .task-status {
+      font-size: 0.75rem;
+      margin-top: 8px;
+      color: #666;
+    }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🦞 Tunnels-to-Bots</h1>
+    
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status disconnected" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span id="statusText">Disconnected</span>
+      </div>
+      <button class="btn-secondary" id="connectBtn" style="width:auto;padding:8px 16px;" onclick="toggleConnection()">Connect</button>
+    </div>
+    
+    <!-- Bots -->
+    <div class="card">
+      <h2>🤖 Bots</h2>
+      <div class="bots-scroll" id="botsGrid">
+        <div class="empty-state">Connect to see bots</div>
+      </div>
+    </div>
+    
+    <!-- Chat/Task tabs -->
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('chat')">💬 Chat</button>
+      <button class="tab" onclick="switchTab('tasks')">📋 Tasks</button>
+    </div>
+    
+    <!-- Chat tab -->
+    <div class="tab-content active" id="chatTab">
+      <div class="messages" id="messages">
+        <div class="message system">👋 Connect and start chatting!</div>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="sendQuick('Hello!')">👋 Hi</button>
+        <button class="quick-btn" onclick="sendQuick('Help me')">❓ Help</button>
+        <button class="quick-btn" onclick="sendQuick('Tell me a joke')">😄 Joke</button>
+        <button class="quick-btn" onclick="sendQuick('What time?')">⏰ Time</button>
+      </div>
+    </div>
+    
+    <!-- Tasks tab -->
+    <div class="tab-content" id="tasksTab">
+      <div class="form-group">
+        <label>Task</label>
+        <input type="text" id="taskTitle" placeholder="What to do?">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="taskDesc" rows="2" placeholder="Details..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="taskPriority">
+          <option value="low">🟢 Low</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="high">🟠 High</option>
+          <option value="urgent">🔴 Urgent</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="createTask()">Create Task</button>
+      <div id="tasksList" style="margin-top:16px;"></div>
+    </div>
+  </div>
+  
+  <!-- Chat input (fixed bottom) -->
+  <div class="chat-section" id="chatInputSection">
+    <div class="input-row">
+      <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
+      <button class="btn-primary" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    // SDK inline (simplified for demo)
+    window.Client = class Client {
+      constructor(options) {
+        this.options = { autoReconnect: true, debug: false, ...options };
+        this.ws = null;
+        this.handlers = new Map();
+      }
+      async connect() {
+        const url = new URL(this.options.serverUrl);
+        if (this.options.apiKey) url.searchParams.set('token', this.options.apiKey);
+        this.ws = new WebSocket(url.toString());
+        return new Promise((resolve, reject) => {
+          this.ws.onopen = () => resolve();
+          this.ws.onerror = reject;
+          this.ws.onmessage = (e) => {
+            try {
+              const f = JSON.parse(e.data);
+              (this.handlers.get(f.type) || []).forEach(h => h(f.data));
+            } catch {}
+          };
+        });
+      }
+      disconnect() { this.ws?.close(); }
+      send(type, data) {
+        this.ws?.send(JSON.stringify({ type, data, timestamp: Date.now(), id: Date.now() }));
+      }
+      sendMessage(p) { this.send('message', p); }
+      createTask(p) { this.send('task', p); }
+      subscribeToBot(id) { this.send('subscribe', { botId: id }); }
+      on(event, h) { if (!this.handlers.has(event)) this.handlers.set(event, []);
+        this.handlers.get(event).push(h); return this; }
+    };
+    
+    let client = null;
+    let selectedBot = null;
+    const tasks = [];
+    
+    // Connection
+    window.toggleConnection = async () => {
+      const btn = document.getElementById('connectBtn');
+      const status = document.getElementById('connectionStatus');
+      const statusText = document.getElementById('statusText');
+      
+      if (client?.ws?.readyState === WebSocket.OPEN) {
+        client.disconnect();
+        client = null;
+        btn.textContent = 'Connect';
+        status.className = 'status disconnected';
+        statusText.textContent = 'Disconnected';
+        return;
+      }
+      
+      status.className = 'status connecting';
+      statusText.textContent = 'Connecting...';
+      btn.disabled = true;
+      
+      try {
+        client = new Client({
+          serverUrl: document.getElementById('serverUrl').value || 'ws://localhost:3000/ws',
+          apiKey: document.getElementById('apiKey').value || 't2b_demo'
+        });
+        
+        client.on('connect', () => {
+          status.className = 'status connected';
+          statusText.textContent = 'Connected';
+          btn.textContent = 'Disconnect';
+          btn.disabled = false;
+          addMessage('system', '✅ Connected!');
+        });
+        
+        client.on('status', (data) => {
+          if (data.type === 'bots_list') {
+            renderBots(data.bots || []);
+            if (data.bots?.length && !selectedBot) selectBot(data.bots[0].id);
+          }
+        });
+        
+        client.on('message', (msg) => addMessage('received', msg.text || '', msg.from));
+        client.on('task_status', () => addMessage('system', '📋 Task created'));
+        
+        await client.connect();
+      } catch (e) {
+        status.className = 'status disconnected';
+        statusText.textContent = 'Failed';
+        btn.disabled = false;
+        addMessage('system', '❌ ' + e.message);
+      }
+    };
+    
+    // Bots
+    function renderBots(bots) {
+      const grid = document.getElementById('botsGrid');
+      if (!bots.length) { grid.innerHTML = '<div class="empty-state">No bots</div>'; return; }
+      grid.innerHTML = bots.map(b => `
+        <div class="bot-card ${selectedBot === b.id ? 'selected' : ''}" onclick="selectBot('${b.id}')">
+          <h3>${b.name}</h3>
+          <span class="status-badge ${b.status}">${b.status}</span>
+        </div>
+      `).join('');
+    }
+    
+    window.selectBot = (botId) => {
+      selectedBot = botId;
+      client?.subscribeToBot(botId);
+      renderBots(Array.from(document.querySelectorAll('.bot-card')).map((el, i) => ({
+        id: i + '_' + botId,
+        name: el.querySelector('h3')?.textContent || 'Bot',
+        status: 'online'
+      })).slice(0, document.querySelectorAll('.bot-card').length));
+    };
+    
+    // Chat
+    window.sendMessage = () => {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text || !selectedBot) { if (!selectedBot) addMessage('system', 'Select a bot first'); return; }
+      client.sendMessage({ to: selectedBot, text });
+      addMessage('sent', text, 'You');
+      input.value = '';
+    };
+    
+    window.sendQuick = (text) => {
+      document.getElementById('messageInput').value = text;
+      sendMessage();
+    };
+    
+    function addMessage(type, text, from) {
+      const msgs = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'message ' + type;
+      div.innerHTML = text + '<div class="meta">' + (from || '') + '</div>';
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    
+    // Tasks
+    window.createTask = () => {
+      const title = document.getElementById('taskTitle').value.trim();
+      const desc = document.getElementById('taskDesc').value.trim();
+      const pri = document.getElementById('taskPriority').value;
+      if (!title || !selectedBot) return alert('Select a bot first');
+      client.createTask({ title, description: desc, priority: pri, botId: selectedBot });
+      tasks.push({ title, desc, pri, status: 'pending' });
+      renderTasks();
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDesc').value = '';
+      addMessage('system', '📋 Task: ' + title);
+      switchTab('chat');
+    };
+    
+    function renderTasks() {
+      const list = document.getElementById('tasksList');
+      if (!tasks.length) { list.innerHTML = '<div class="empty-state">No tasks</div>'; return; }
+      const icons = { low: '🟢', medium: '🟡', high: '🟠', urgent: '🔴' };
+      list.innerHTML = tasks.map((t, i) => `
+        <div class="task-item">
+          <div class="task-header">
+            <span class="task-title">${t.title}</span>
+            <span class="priority ${t.pri}">${icons[t.pri]} ${t.pri}</span>
+          </div>
+          ${t.desc ? '<div class="task-desc">' + t.desc + '</div>' : ''}
+          <div class="task-status">Status: ${t.status}</div>
+        </div>
+      `).join('');
+    }
+    
+    // Tabs
+    window.switchTab = (tab) => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Tab').classList.add('active');
+    };
+  </script>
+</body>
+</html>
