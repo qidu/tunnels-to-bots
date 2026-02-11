@@ -1,0 +1,125 @@
+# Tunnels-to-Bots Server Configuration
+# Copy this to config.yaml and modify as needed
+
+# Application Settings
+app:
+  host: "0.0.0.0"
+  port: 3000
+  dashboard_port: 3001
+  env: "development"
+
+# Authentication
+auth:
+  jwt_secret: "your-super-secret-jwt-key-change-in-production"
+  jwt_expiry: "24h"
+  api_key_length: 32
+  # IMPORTANT: Change these in production!
+  api_secret: "your-256-bit-api-secret-key-here-change-me"
+  dashboard_secret: "your-dashboard-secret-change-me"
+
+# Database (for production, use external Redis)
+database:
+  redis:
+    host: "localhost"
+    port: 6379
+    password: ""
+    key_prefix: "tunnels2bots:"
+  # In-memory fallback for development
+  memory:
+    enabled: true
+
+# Session Settings
+sessions:
+  max_per_user: 10
+  timeout: 3600  # seconds
+  heartbeat_interval: 30000  # milliseconds
+
+# Rate Limiting
+rate_limit:
+  window_ms: 60000  # 1 minute
+  max_requests: 100
+  max_messages_per_second: 50
+
+# Tunnel Configuration
+tunnels:
+  default_provider: "frp"
+  
+  # frp Configuration (self-hosted)
+  frp:
+    enabled: true
+    server_addr: "frp.example.com"
+    server_port: 7000
+    auth_token: ""
+    config_template: |
+      [common]
+      server_addr = {{server_addr}}
+      server_port = {{server_port}}
+      token = {{auth_token}}
+      
+      [tunnels2bots_{{instance_id}}]
+      type = tcp
+      local_ip = 127.0.0.1
+      local_port = {{local_port}}
+      remote_port = {{remote_port}}
+
+  # Tailscale Configuration
+  tailscale:
+    enabled: true
+    dns_name: "tunnels2bots"
+    serve_path: "/ws"
+
+  # Tunnelto Configuration (SaaS)
+  tunnelto:
+    enabled: true
+    server_url: "https://tunnelto.dev"
+    api_key: ""
+
+# OpenClaw Gateway Compatibility
+openclaw:
+  enabled: true
+  message_format: "openclaw_v1"
+  session_prefix: "clb_"
+  bot_channel_types:
+    - "direct"
+    - "group"
+
+# Clustering (for horizontal scaling)
+cluster:
+  enabled: false
+  redis_channel: "tunnels2bots:cluster"
+  node_id: ""
+
+# Metrics & Logging
+metrics:
+  enabled: true
+  port: 9090
+  path: "/metrics"
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+# CORS Settings (for web clients)
+cors:
+  enabled: true
+  origins:
+    - "http://localhost:3000"
+    - "http://localhost:5173"
+    - "app://*"
+  credentials: true
+
+# Security
+security:
+  encryption:
+    enabled: true
+    algorithm: "aes-256-gcm"
+  cors_max_age: 86400
+  helmet: true
+
+# Features
+features:
+  multi_bot: true
+  message_queue: true
+  analytics: true
+  webhooks: false

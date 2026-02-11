@@ -1,0 +1,24 @@
+{
+  "name": "tunnels-to-bots-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "uuid": "^9.0.0",
+    "yaml": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.0",
+    "@types/uuid": "^9.0.0",
+    "tsx": "^4.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

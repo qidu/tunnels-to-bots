@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Tunnels-to-Bots Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f23;
+      color: #fff;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.5rem; background: linear-gradient(90deg, #00d4ff, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .refresh-btn { padding: 10px 20px; background: #7c3aed; border: none; border-radius: 8px; color: #fff; cursor: pointer; }
+    .refresh-btn:hover { background: #6d28d9; }
+    .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+    
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-card h3 { font-size: 0.9rem; color: #888; margin-bottom: 8px; }
+    .stat-card .value { font-size: 2.5rem; font-weight: bold; }
+    .stat-card .value.connections { color: #00d4ff; }
+    .stat-card .value.sessions { color: #00ff88; }
+    .stat-card .value.bots { color: #ffaa00; }
+    .stat-card .value.tasks { color: #ff6b6b; }
+    
+    /* Tables */
+    .section { margin-bottom: 24px; }
+    .section h2 { font-size: 1.2rem; margin-bottom: 12px; color: #00d4ff; }
+    .table-container {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { background: rgba(255,255,255,0.05); font-weight: 600; font-size: 0.85rem; color: #888; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
+    .status-badge.online { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .status-badge.offline { background: rgba(255,68,68,0.2); color: #ff4444; }
+    .status-badge.pending { background: rgba(255,170,0,0.2); color: #ffaa00; }
+    
+    /* Log */
+    .log-container {
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .log-line { margin-bottom: 4px; }
+    .log-line .time { color: #666; }
+    .log-line .level { padding: 2px 6px; border-radius: 4px; margin-right: 8px; }
+    .log-line .level.INFO { background: rgba(0,255,136,0.2); color: #00ff88; }
+    .log-line .level.ERROR { background: rgba(255,68,68,0.2); color: #ff4444; }
+    .log-line .level.WARN { background: rgba(255,170,0,0.2); color: #ffaa00; }
+    
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      th, td { padding: 8px 12px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🦞 Tunnels-to-Bots Dashboard</h1>
+    <button class="refresh-btn" onclick="fetchStats()">🔄 Refresh</button>
+  </div>
+  
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Active Connections</h3>
+        <div class="value connections" id="connectionsCount">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Active Sessions</h3>
+        <div class="value sessions" id="sessionsCount">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Bots</h3>
+        <div class="value bots" id="botsCount">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Tasks</h3>
+        <div class="value tasks" id="tasksCount">0</div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>📡 Connections</h2>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>ID</th><th>User</th><th>Connected</th><th>Last Activity</th><th>Bots</th></tr></thead>
+          <tbody id="connectionsTable"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>👤 Sessions</h2>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Session ID</th><th>User ID</th><th>Created</th><th>Connections</th></tr></thead>
+          <tbody id="sessionsTable"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>🤖 Bots</h2>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Bot ID</th><th>Name</th><th>Owner</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody id="botsTable"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>📋 Tasks</h2>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Task ID</th><th>Title</th><th>Bot</th><th>Priority</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody id="tasksTable"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>📜 Server Log</h2>
+      <div class="log-container" id="logContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    let stats = { connections: [], sessions: [], bots: [], tasks: [], logs: [] };
+    let logBuffer = [];
+    
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        stats = await res.json();
+        renderStats();
+        addLogs(stats.logs || []);
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      }
+    }
+    
+    function renderStats() {
+      // Counts
+      document.getElementById('connectionsCount').textContent = stats.connections?.length || 0;
+      document.getElementById('sessionsCount').textContent = stats.sessions?.length || 0;
+      document.getElementById('botsCount').textContent = stats.bots?.length || 0;
+      document.getElementById('tasksCount').textContent = stats.tasks?.filter(t => t.status === 'pending').length || 0;
+      
+      // Connections table
+      document.getElementById('connectionsTable').innerHTML = (stats.connections || []).map(c => `
+        <tr>
+          <td><code>${c.id.substring(0,8)}...</code></td>
+          <td>${c.userId || '-'}</td>
+          <td>${new Date(c.connectedAt).toLocaleString()}</td>
+          <td>${new Date(c.lastActivity).toLocaleString()}</td>
+          <td>${c.subscribedBots?.length || 0}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;color:#666">No connections</td></tr>';
+      
+      // Sessions table
+      document.getElementById('sessionsTable').innerHTML = (stats.sessions || []).map(s => `
+        <tr>
+          <td><code>${s.id.substring(0,16)}...</code></td>
+          <td>${s.userId}</td>
+          <td>${new Date(s.createdAt).toLocaleString()}</td>
+          <td>${s.connectionCount}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4" style="text-align:center;color:#666">No sessions</td></tr>';
+      
+      // Bots table
+      document.getElementById('botsTable').innerHTML = (stats.bots || []).map(b => `
+        <tr>
+          <td><code>${b.id}</code></td>
+          <td>${b.name}</td>
+          <td>${b.userId}</td>
+          <td>${b.type}</td>
+          <td><span class="status-badge ${b.status}">${b.status}</span></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;color:#666">No bots</td></tr>';
+      
+      // Tasks table
+      document.getElementById('tasksTable').innerHTML = (stats.tasks || []).map(t => `
+        <tr>
+          <td><code>${t.id.substring(0,8)}...</code></td>
+          <td>${t.title}</td>
+          <td>${t.botId || '-'}</td>
+          <td><span class="status-badge ${t.priority}">${t.priority}</span></td>
+          <td><span class="status-badge ${t.status}">${t.status}</span></td>
+          <td>${new Date(t.createdAt).toLocaleString()}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" style="text-align:center;color:#666">No tasks</td></tr>';
+    }
+    
+    function addLogs(newLogs) {
+      logBuffer = [...logBuffer, ...newLogs].slice(-100);
+      document.getElementById('logContainer').innerHTML = logBuffer.map(l => `
+        <div class="log-line">
+          <span class="time">${new Date(l.timestamp).toLocaleTimeString()}</span>
+          <span class="level ${l.level}">${l.level}</span>
+          <span class="message">${l.message}</span>
+        </div>
+      `).join('');
+    }
+    
+    // Auto-refresh every 5 seconds
+    fetchStats();
+    setInterval(fetchStats, 5000);
+  </script>
+</body>
+</html>
