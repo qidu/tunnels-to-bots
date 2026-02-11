@@ -1,0 +1,65 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+dependencies {
+    // WebSocket client
+    implementation 'org.java-websocket:Java-WebSocket:1.5.4'
+    
+    // JSON parsing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // HTTP (for REST API)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    
+    // RxJava for async operations
+    implementation 'io.reactivex.rxjava3:rxjava:3.1.8'
+    
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath = configurations.compileClasspath
+    destinationDir = file("../docs/javadoc")
+    exclude '**/internal/**'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifactId = 'tunnels-to-bots-sdk'
+            version = '1.0.0'
+            
+            pom {
+                name = 'Tunnels-to-Bots Android SDK'
+                description = 'Android SDK for tunnels-to-bots communication platform'
+                url = 'https://github.com/your-org/tunnels-to-bots'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'developer'
+                        name = 'Developer Name'
+                        email = 'developer@example.com'
+                    }
+                }
+            }
+        }
+    }
+}

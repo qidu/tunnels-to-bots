@@ -1,0 +1,31 @@
+{
+  "name": "tunnels-to-bots-sdk",
+  "version": "1.0.0",
+  "description": "JavaScript SDK for tunnels-to-bots communication platform",
+  "main": "client.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./client.js",
+      "require": "./client.js"
+    }
+  },
+  "keywords": ["tunnels-to-bots", "sdk", "websocket", "bot"],
+  "license": "MIT"
+}
+
+cat > /home/teric/.openclaw/workspace-clawra/tunnels-to-bots/sdk/javascript/package.json << 'EOF'
+{
+  "name": "tunnels-to-bots-sdk",
+  "version": "1.0.0",
+  "description": "JavaScript SDK for tunnels-to-bots communication platform",
+  "main": "dist/client.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "mkdir -p dist",
+    "test": "echo 'Use wscat to test: wscat -c ws://localhost:3000/ws'"
+  },
+  "keywords": ["tunnels-to-bots", "sdk", "websocket", "bot"],
+  "license": "MIT"
+}
